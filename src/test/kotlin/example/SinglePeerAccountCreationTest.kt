@@ -1,10 +1,12 @@
 package example
 
 import jp.co.soramitsu.iroha.testcontainers.IrohaContainer
+import mu.KLogging
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import javax.xml.bind.DatatypeConverter
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SinglePeerAccountCreationTest {
@@ -22,7 +24,13 @@ class SinglePeerAccountCreationTest {
     }
 
     @Test
-    fun TestWithIroha() {
+    fun testWithIroha() {
         val api = iroha.api
+        api.transactionListSync(AccountCreatorHelper.getAccountTransactionList("randomAccountName"))
+        AccountCreatorHelper.getTransactionsHashes().forEach {
+            logger.info("Status of $it : " + api.txStatusSync(DatatypeConverter.parseHexBinary(it)))
+        }
     }
+
+    companion object : KLogging()
 }

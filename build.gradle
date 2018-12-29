@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     compile "com.github.warchant:testcontainers-iroha:iroha-1.0.0_rc1-SNAPSHOT"
+    compile 'io.github.microutils:kotlin-logging:1.4.9'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testCompile('org.junit.jupiter:junit-jupiter-api:5.2.0')
