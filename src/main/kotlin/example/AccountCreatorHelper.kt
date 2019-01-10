@@ -13,13 +13,20 @@ object AccountCreatorHelper {
 
     fun getTransactions(mortalAccount: String): List<TransactionOuterClass.Transaction> {
         var time = System.currentTimeMillis() - timeOffset * 20
-
+        val fullAccountName = "$mortalAccount@soramitsu"
         val newKeypair = Ed25519Sha3().generateKeypair()
 
+        // Create domain
+        txList.add(TransactionBuilder(GenesisBlockBuilder.defaultAccountId, time)
+                .setQuorum(1)
+                .createDomain("soramitsu", "none")
+                .sign(GenesisBlockBuilder.defaultKeyPair)
+                .build())
+        time += timeOffset
         // Create account
         txList.add(TransactionBuilder(GenesisBlockBuilder.defaultAccountId, time)
                 .setQuorum(1)
-                .createAccount(mortalAccount, newKeypair.public)
+                .createAccount(fullAccountName, newKeypair.public)
                 .sign(GenesisBlockBuilder.defaultKeyPair)
                 .build())
         time += timeOffset
@@ -40,23 +47,23 @@ object AccountCreatorHelper {
         // Append second role
         txList.add(TransactionBuilder(GenesisBlockBuilder.defaultAccountId, time)
                 .setQuorum(1)
-                .appendRole(mortalAccount, "god_of_roles")
+                .appendRole(fullAccountName, "god_of_roles")
                 .sign(GenesisBlockBuilder.defaultKeyPair)
                 .build())
         time += timeOffset
         // Append first role by self
-        txList.add(TransactionBuilder(mortalAccount, time)
+        txList.add(TransactionBuilder(fullAccountName, time)
                 .setQuorum(1)
-                .appendRole(mortalAccount, "god_of_details")
+                .appendRole(fullAccountName, "god_of_details")
                 .sign(newKeypair)
                 .build())
         time += timeOffset
         // Check first role
-        txList.add(TransactionBuilder(mortalAccount, time)
+        txList.add(TransactionBuilder(fullAccountName, time)
                 .setQuorum(1)
-                .setAccountDetail(mortalAccount, "key", "value")
-                .setAccountDetail(mortalAccount, "key1", "value2")
-                .setAccountDetail(mortalAccount, "key2", "value3")
+                .setAccountDetail(fullAccountName, "key", "value")
+                .setAccountDetail(fullAccountName, "key1", "value2")
+                .setAccountDetail(fullAccountName, "key2", "value3")
                 .sign(newKeypair)
                 .build())
 

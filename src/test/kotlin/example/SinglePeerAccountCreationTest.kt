@@ -1,12 +1,14 @@
 package example
 
+import iroha.protocol.Endpoint.TxStatus
+import jp.co.soramitsu.iroha.java.Utils
 import jp.co.soramitsu.iroha.testcontainers.IrohaContainer
 import mu.KLogging
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import javax.xml.bind.DatatypeConverter
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SinglePeerAccountCreationTest {
@@ -26,7 +28,13 @@ class SinglePeerAccountCreationTest {
     @Test
     fun testWithIroha() {
         val api = iroha.api
-        api.transactionListSync(AccountCreatorHelper.getTransactions("poorguyfromapoorfamily@test"))
+        val transactions = AccountCreatorHelper.getTransactions("poorguyfromapoorfamily")
+        api.transactionListSync(transactions)
+        Thread.sleep(5000)
+        transactions.forEach {
+            val txStatusSync = api.txStatusSync(Utils.hash(it))
+            assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, txStatusSync.txStatus)
+        }
     }
 
     companion object : KLogging()
