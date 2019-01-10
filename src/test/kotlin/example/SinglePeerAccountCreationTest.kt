@@ -32,7 +32,9 @@ class SinglePeerAccountCreationTest {
         api.transactionListSync(transactions)
         Thread.sleep(5000)
         transactions.forEach {
-            val txStatusSync = api.txStatusSync(Utils.hash(it))
+            val hash = Utils.hash(it)
+            val txStatusSync = api.txStatusSync(hash)
+            println(txStatusSync)
             assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, txStatusSync.txStatus)
         }
     }

@@ -16,6 +16,13 @@ object AccountCreatorHelper {
         val fullAccountName = "$mortalAccount@soramitsu"
         val newKeypair = Ed25519Sha3().generateKeypair()
 
+        // Create empty role for domain
+        txList.add(TransactionBuilder(GenesisBlockBuilder.defaultAccountId, time)
+                .setQuorum(1)
+                .createRole("none", emptyList())
+                .sign(GenesisBlockBuilder.defaultKeyPair)
+                .build())
+        time += timeOffset
         // Create domain
         txList.add(TransactionBuilder(GenesisBlockBuilder.defaultAccountId, time)
                 .setQuorum(1)
