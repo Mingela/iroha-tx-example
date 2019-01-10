@@ -26,10 +26,7 @@ class SinglePeerAccountCreationTest {
     @Test
     fun testWithIroha() {
         val api = iroha.api
-        api.transactionListSync(AccountCreatorHelper.getAccountTransactionList("randomAccountName"))
-        AccountCreatorHelper.getTransactionsHashes().forEach {
-            logger.info("Status of $it : " + api.txStatusSync(DatatypeConverter.parseHexBinary(it)))
-        }
+        api.transactionListSync(AccountCreatorHelper.getTransactions("poorguyfromapoorfamily@test"))
     }
 
     companion object : KLogging()
