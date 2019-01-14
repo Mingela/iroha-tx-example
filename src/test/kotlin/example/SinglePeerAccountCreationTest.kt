@@ -4,31 +4,27 @@ import iroha.protocol.Endpoint.TxStatus
 import jp.co.soramitsu.iroha.java.Utils
 import jp.co.soramitsu.iroha.testcontainers.IrohaContainer
 import mu.KLogging
-import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class SinglePeerAccountCreationTest {
 
     val iroha = IrohaContainer()
 
-    @BeforeAll
+    @BeforeEach
     fun beforeAll() {
         iroha.start()
     }
 
-    @AfterAll
+    @AfterEach
     fun afterAll() {
         iroha.stop()
     }
 
     @Test
-    fun testWithIroha() {
+    fun testRolesWithIroha() {
         val api = iroha.api
-        val transactions = AccountCreatorHelper.getTransactions("poorguyfromapoorfamily")
+        val transactions = AccountCreatorHelper.getRolesTransactions("poorguyfromapoorfamily")
         api.transactionListSync(transactions)
         Thread.sleep(5000)
         transactions.forEach {
@@ -37,6 +33,22 @@ class SinglePeerAccountCreationTest {
             println(txStatusSync)
             assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, txStatusSync.txStatus)
         }
+        println(api.query(AccountCreatorHelper.getQuery("poorguyfromapoorfamily")))
+    }
+
+    @Test
+    fun testBatchWithIroha() {
+        val api = iroha.api
+        val transactions = AccountCreatorHelper.getBatchTransactions("anotherguysufferingiroha")
+        api.transactionListSync(transactions)
+        Thread.sleep(5000)
+        transactions.forEach {
+            val hash = Utils.hash(it)
+            val txStatusSync = api.txStatusSync(hash)
+            println(txStatusSync)
+            assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, txStatusSync.txStatus)
+        }
+        println(api.query(AccountCreatorHelper.getQuery("anotherguysufferingiroha")))
     }
 
     companion object : KLogging()
