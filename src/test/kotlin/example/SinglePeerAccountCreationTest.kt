@@ -3,9 +3,12 @@ package example
 import iroha.protocol.Endpoint.TxStatus
 import jp.co.soramitsu.iroha.java.Utils
 import jp.co.soramitsu.iroha.testcontainers.IrohaContainer
+import jp.co.soramitsu.iroha.testcontainers.detail.GenesisBlockBuilder
 import mu.KLogging
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class SinglePeerAccountCreationTest {
 
@@ -33,13 +36,12 @@ class SinglePeerAccountCreationTest {
             println(txStatusSync)
             assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, txStatusSync.txStatus)
         }
-        println(api.query(AccountCreatorHelper.getQuery("poorguyfromapoorfamily")))
     }
 
     @Test
     fun testBatchWithIroha() {
         val api = iroha.api
-        val transactions = AccountCreatorHelper.getBatchTransactions("anotherguysufferingiroha")
+        val transactions = Utils.createTxAtomicBatch(AccountCreatorHelper.getBatchTransactions("anotherguysufferingiroha"), GenesisBlockBuilder.defaultKeyPair)
         api.transactionListSync(transactions)
         Thread.sleep(5000)
         transactions.forEach {
@@ -48,7 +50,19 @@ class SinglePeerAccountCreationTest {
             println(txStatusSync)
             assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, txStatusSync.txStatus)
         }
-        println(api.query(AccountCreatorHelper.getQuery("anotherguysufferingiroha")))
+    }
+
+    @Test
+    fun testStatusStream() {
+        val api = iroha.api
+        val transactions = AccountCreatorHelper.getBatchTransactions("onemorepoorman")
+        api.transactionListSync(transactions)
+        transactions.map { Utils.hash(it) }.forEach {
+            api.txStatus(it).blockingSubscribe { statusResponse ->
+                println(statusResponse)
+                assertNotEquals(TxStatus.STATEFUL_VALIDATION_FAILED, statusResponse.txStatus)
+            }
+        }
     }
 
     companion object : KLogging()

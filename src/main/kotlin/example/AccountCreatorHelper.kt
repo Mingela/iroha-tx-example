@@ -108,7 +108,7 @@ object AccountCreatorHelper {
         // Write something
         txList.add(TransactionBuilder(GenesisBlockBuilder.defaultAccountId, time)
                 .setQuorum(1)
-                .setAccountDetail(fullAccountName, "key", "value")
+                .setAccountDetail(fullAccountName + "abc", "key", "value")
                 .setAccountDetail(fullAccountName, "key1", "value2")
                 .setAccountDetail(fullAccountName, "key2", "value3")
                 .sign(GenesisBlockBuilder.defaultKeyPair)
