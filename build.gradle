@@ -23,8 +23,8 @@ repositories {
 }
 
 dependencies {
-    compile "com.github.warchant:testcontainers-iroha:v1.0.0_rc2-SNAPSHOT"
-    compile 'com.github.warchant:iroha-pure-java:v1.0.0_rc2-SNAPSHOT'
+    compile "com.github.hyperledger.iroha-java:testcontainers:master-SNAPSHOT"
+    compile 'com.github.hyperledger.iroha-java:client:master-SNAPSHOT'
     compile 'io.github.microutils:kotlin-logging:1.4.9'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
