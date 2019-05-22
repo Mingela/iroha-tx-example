@@ -23,8 +23,8 @@ repositories {
 }
 
 dependencies {
-    compile "com.github.hyperledger.iroha-java:testcontainers:master-SNAPSHOT"
-    compile 'com.github.hyperledger.iroha-java:client:master-SNAPSHOT'
+    compile "com.github.hyperledger.iroha-java:testcontainers:fbab109736"
+    compile 'com.github.hyperledger.iroha-java:client:fbab109736'
     compile 'io.github.microutils:kotlin-logging:1.4.9'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 

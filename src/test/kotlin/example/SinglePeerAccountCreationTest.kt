@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 class SinglePeerAccountCreationTest {
 
-    val iroha = IrohaContainer()
+    private val iroha = IrohaContainer().withLogger(null)
 
     @BeforeEach
     fun beforeAll() {
@@ -47,7 +47,10 @@ class SinglePeerAccountCreationTest {
     @Test
     fun testBatchWithIroha() {
         val api = iroha.api
-        val transactions = Utils.createTxAtomicBatch(AccountCreatorHelper.getBatchTransactions("anotherguysufferingiroha"), GenesisBlockBuilder.defaultKeyPair)
+        val transactions = Utils.createTxAtomicBatch(
+            AccountCreatorHelper.getBatchTransactions("anotherguysufferingiroha"),
+            GenesisBlockBuilder.defaultKeyPair
+        )
         api.transactionListSync(transactions)
         Thread.sleep(5000)
         transactions.forEach {
@@ -75,15 +78,18 @@ class SinglePeerAccountCreationTest {
     fun worldStateViewUpdating() {
         val api = iroha.api
         val counter = AtomicLong(1)
-        val query = BlocksQueryBuilder(GenesisBlockBuilder.defaultAccountId, Instant.now(), counter.getAndIncrement())
+        val query =
+            BlocksQueryBuilder(GenesisBlockBuilder.defaultAccountId, Instant.now(), counter.getAndIncrement())
                 .buildSigned(GenesisBlockBuilder.defaultKeyPair)
         api.blocksQuery(query).subscribe {
             val payload = it.blockResponse.block.blockV1.payload
             println("Got block #${payload.height}. Let's query the account")
             // try to play with this value
-            Thread.sleep(1)
-            val createAccount = payload.transactionsList[0].payload.reducedPayload.commandsList[0].createAccount
-            val queryResponse = api.query(Query.builder(GenesisBlockBuilder.defaultAccountId, counter.getAndIncrement())
+            Thread.sleep(200)
+            val createAccount =
+                payload.transactionsList[0].payload.reducedPayload.commandsList[0].createAccount
+            val queryResponse = api.query(
+                Query.builder(GenesisBlockBuilder.defaultAccountId, counter.getAndIncrement())
                     .getAccount(createAccount.accountName + "@" + createAccount.domainId)
                     .buildSigned(GenesisBlockBuilder.defaultKeyPair)
             )
@@ -93,20 +99,54 @@ class SinglePeerAccountCreationTest {
             }
         }
         while (true) {
-            Thread.sleep(500)
-            api.transactionSync(Transaction.builder(GenesisBlockBuilder.defaultAccountId)
-                    .createAccount(String.getRandomString(10), GenesisBlockBuilder.defaultDomainName, GenesisBlockBuilder.defaultKeyPair.public)
+            Thread.sleep(1000)
+            api.transactionSync(
+                Transaction.builder(GenesisBlockBuilder.defaultAccountId)
+                    .createAccount(
+                        String.getRandomString(10),
+                        GenesisBlockBuilder.defaultDomainName,
+                        GenesisBlockBuilder.defaultKeyPair.public
+                    )
                     .sign(GenesisBlockBuilder.defaultKeyPair)
                     .build()
             )
         }
     }
 
+    @Test
+    fun testBigDetails() {
+        println(
+            iroha.api.transaction(
+                Transaction.builder(GenesisBlockBuilder.defaultAccountId)
+                    .setAccountDetail(
+                        GenesisBlockBuilder.defaultAccountId,
+                        "key",
+                        String.getRandomString(4194304)
+                    )
+                    .sign(GenesisBlockBuilder.defaultKeyPair)
+                    .build()
+            ).blockingLast()
+        )
+
+        println(
+            iroha.api.query(
+                Query.builder(GenesisBlockBuilder.defaultAccountId, 1)
+                    .disableValidation()
+                    .getAccountDetail(
+                        GenesisBlockBuilder.defaultAccountId,
+                        GenesisBlockBuilder.defaultAccountId,
+                        "key"
+                    )
+                    .buildSigned(GenesisBlockBuilder.defaultKeyPair)
+            )
+        )
+    }
+
     /** Returns random string of [len] characters */
-    fun String.Companion.getRandomString(len: Int): String {
+    private fun String.Companion.getRandomString(len: Int): String {
         val random = Random()
         val res = StringBuilder()
-        for (i in 0..len) {
+        for (i in 1..len) {
             res.append(CHAR[random.nextInt(CHAR.length)])
         }
         return res.toString()
