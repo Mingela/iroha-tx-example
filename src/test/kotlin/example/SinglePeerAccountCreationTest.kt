@@ -10,20 +10,20 @@ import jp.co.soramitsu.iroha.java.Transaction
 import jp.co.soramitsu.iroha.java.Utils
 import jp.co.soramitsu.iroha.testcontainers.IrohaContainer
 import jp.co.soramitsu.iroha.testcontainers.detail.GenesisBlockBuilder
-import jp.co.soramitsu.iroha.testcontainers.detail.GenesisBlockBuilder.defaultKeyPair
-import jp.co.soramitsu.iroha.testcontainers.detail.GenesisBlockBuilder.defaultRoleName
+import jp.co.soramitsu.iroha.testcontainers.detail.GenesisBlockBuilder.*
 import mu.KLogging
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.lang.Thread.sleep
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
 class SinglePeerAccountCreationTest {
 
-    private val iroha = IrohaContainer().withLogger(null)
+    private val iroha = IrohaContainer().withIrohaDockerImage("hyperledger/iroha:1.1.1").withLogger(null)
 
     @BeforeEach
     fun beforeAll() {
@@ -365,6 +365,89 @@ class SinglePeerAccountCreationTest {
                     .buildSigned(keyPair)
             )
         )
+    }
+
+    @Test
+    fun testMstPendingTransactions() {
+        val keyPair1 = Ed25519Sha3().generateKeypair()
+        val keyPair2 = Ed25519Sha3().generateKeypair()
+        val accountName = "mstguy"
+        val accountId = "$accountName@$defaultDomainName"
+        val assetId = "asset#$defaultDomainName"
+        println("Account creation:")
+        println(
+            iroha.api.transaction(
+                Transaction.builder(defaultAccountId)
+                    .createAccount(accountId, keyPair1.public)
+                    .sign(defaultKeyPair)
+                    .build()
+            ).blockingLast()
+        )
+        println("Signatories, asset and quorum:")
+        println(
+            iroha.api.transaction(
+                Transaction.builder(accountId)
+                    .addSignatory(accountId, keyPair2.public)
+                    .setAccountQuorum(accountId, 2)
+                    .createAsset("asset", defaultDomainName, 0)
+                    .addAssetQuantity(assetId, "100500")
+                    .sign(keyPair1)
+                    .build()
+            ).blockingLast()
+        )
+        repeat(100) {
+            println("Send mst transactions:")
+            val txList = mutableListOf<Transaction>()
+            repeat(10) {
+                txList.add(
+                    Transaction.builder(accountId)
+                        .setQuorum(2)
+                        .transferAsset(accountId, defaultAccountId, assetId, "", "1")
+                        .build()
+                )
+            }
+            txList.forEach { iroha.api.transactionSync(it.sign(keyPair1).build()) }
+            sleep(1000)
+            print("Query pending transactions: ")
+            var queryResponse = iroha.api.query(
+                Query.builder(accountId, System.currentTimeMillis())
+                    .getPendingTransactions()
+                    .buildSigned(keyPair1)
+            )
+            var transactionsCount = queryResponse.transactionsResponse.transactionsCount
+            println(transactionsCount)
+
+            println("Sign mst transactions once again:")
+            txList.forEach { iroha.api.transactionSync(it.sign(keyPair2).build()) }
+            print("Query pending transactions: ")
+            queryResponse = iroha.api.query(
+                Query.builder(accountId, System.currentTimeMillis())
+                    .getPendingTransactions()
+                    .buildSigned(keyPair1)
+            )
+            transactionsCount = queryResponse.transactionsResponse.transactionsCount
+            println(transactionsCount)
+            println("Send same mst transactions again:")
+            txList.forEach { iroha.api.transactionSync(it.sign(keyPair1).build()) }
+            print("Query pending transactions: ")
+            queryResponse = iroha.api.query(
+                Query.builder(accountId, System.currentTimeMillis())
+                    .getPendingTransactions()
+                    .buildSigned(keyPair1)
+            )
+            transactionsCount = queryResponse.transactionsResponse.transactionsCount
+            println(transactionsCount)
+            println("Sign same mst transactions once again:")
+            txList.forEach { iroha.api.transactionSync(it.sign(keyPair2).build()) }
+            print("Query pending transactions: ")
+            queryResponse = iroha.api.query(
+                Query.builder(accountId, System.currentTimeMillis())
+                    .getPendingTransactions()
+                    .buildSigned(keyPair1)
+            )
+            transactionsCount = queryResponse.transactionsResponse.transactionsCount
+            println(transactionsCount)
+        }
     }
 
     /** Returns random string of [len] characters */
